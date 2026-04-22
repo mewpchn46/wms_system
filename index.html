@@ -701,7 +701,7 @@ input[readonly]{background:#f7f8fa;cursor:default}
 
 <script>
 // ==================== CONFIG ====================
-const API_URL = 'https://script.google.com/macros/s/AKfycby08FV0bCAILk0D2qcz6ALMGPcZ42MPnnRp_9ZtYZPxrT6SUP3R26WLTZ13VX_9mxa-xQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzYlzVA-O_SPkibWtGMKd60onmQHn5zWsLHWXTqtkGj_3PSPylidRu9xHmooOZ4vW9y/exec';
 const APPSHEET_URL = 'https://www.appsheet.com/start/YOUR_APPSHEET_APP_ID'; // ← เปลี่ยนเป็น URL AppSheet ของคุณ
 
 // ==================== SYNC STATUS ====================
@@ -744,7 +744,8 @@ async function apiGet(action, params={}){
 async function apiPost(action, data={}){
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    redirect: 'follow',
+    headers: {'Content-Type':'text/plain'},
     body: JSON.stringify({action, ...data})
   });
   if(!res.ok) throw new Error('HTTP '+res.status);
