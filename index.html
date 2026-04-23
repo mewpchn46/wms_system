@@ -52,10 +52,6 @@ nav .icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
 #sync-badge.offline .sync-dot{background:#9ca3af}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ===== APPSHEET LINK ===== */
-#appsheet-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:22px;font-size:12px;font-weight:700;background:linear-gradient(135deg,#1a3c5e,#2d6a9f);color:#fff;border:none;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:all .2s;text-decoration:none}
-#appsheet-btn:hover{opacity:.85;transform:translateY(-1px)}
-
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
 .card:last-child{margin-bottom:0}
 .card-title{font-size:14.5px;font-weight:700;margin-bottom:16px;color:var(--text);display:flex;align-items:center;gap:8px}
@@ -300,10 +296,6 @@ input[readonly]{background:#f7f8fa;cursor:default}
       <div class="search-bar">
         <input id="global-search" placeholder="ค้นหาสินค้า..." oninput="globalSearch(this.value)">
       </div>
-      <!-- AppSheet Button -->
-      <a id="appsheet-btn" href="https://www.appsheet.com/start/YOUR_APPSHEET_APP_ID" target="_blank" title="เปิด AppSheet เพื่อรับสินค้าบนมือถือ">
-        📱 <span class="as-text">AppSheet</span>
-      </a>
       <!-- Sync Status Badge -->
       <button id="sync-badge" class="offline" onclick="manualSync()" title="คลิกเพื่อซิงค์ข้อมูล">
         <span class="sync-dot"></span>
@@ -760,8 +752,9 @@ let movements = [];
 let outDocs   = [];
 let poDocs    = [];
 let productImages = {};
-let pickItems = {};
+let pickItems = {}; 
 let poItems   = {};
+var currentPoRef = '';
 
 // ==================== LOAD ALL DATA ====================
 // ✅ แก้ไข action names ให้ตรงกับ Apps Script ทั้งหมด
@@ -788,11 +781,13 @@ async function loadAllData(){
     movements = movements.map(r=>({...r, qty:Number(r.qty)||0, void:r.void==='TRUE'||r.void===true,
       isVoid:r.isVoid==='TRUE'||r.isVoid===true, isCorrection:r.isCorrection==='TRUE'||r.isCorrection===true}));
     outDocs   = outDocs.map(d=>({...d, total:Number(d.total)||0, void:d.void==='TRUE'||d.void===true,
-      items: safeParseJSON(d.items_json, [])}));
+  items: safeParseJSON(d.items_json, []),
+  poRef: d.po_ref || d.poRef || ''}));
     poDocs    = poDocs.map(d=>({...d, total:Number(d.total)||0, void:d.void==='TRUE'||d.void===true,
       items: safeParseJSON(d.items_json, [])}));
     products  = products.map(p=>({...p, price:Number(p.price)||0, custom:p.custom==='TRUE'||p.custom===true,
-      override_base:p.override_base==='TRUE'||p.override_base===true}));
+  override_base:p.override_base==='TRUE'||p.override_base===true,
+  image_url:p.image_url||''}));
 
     setSyncStatus('synced');
     populateAllSelects();
@@ -815,7 +810,10 @@ function safeParseJSON(str, def){
 // ==================== DATA HELPERS ====================
 function getAllProducts(){ return products; }
 function getProduct(id){ return products.find(p=>p.id===id); }
-function getProductImg(pid){ return productImages[pid]||null; }
+function getProductImg(pid){ 
+  const p=getProduct(pid);
+  return productImages[pid]||(p&&p.image_url?p.image_url:null);
+}
 
 function getStock(pid){
   const tin  = inbounds.filter(r=>r.pid===pid&&!r.void).reduce((s,r)=>s+r.qty,0);
@@ -1055,12 +1053,45 @@ async function saveStockOut(){
   const rec={id:autoId('OUT-',outbounds),pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,reason,timestamp:now(),user:'พนักงาน',void:false};
   setSyncStatus('syncing');
   try {
-    await apiPost('save_outbound', rec);  // ✅ แก้จาก saveOutbound
+    await apiPost('save_outbound', rec);
     outbounds.push(rec);
     movements.push({type:'OUT',docId:rec.id,pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,note:reason,timestamp:rec.timestamp,user:rec.user,void:false,isVoid:false,isCorrection:false});
+
+    // อัปเดตสถานะใบเบิกถ้าตัดครบทุกรายการแล้ว
+const docIdx = outDocs.findIndex(d => !d.void && d.status==='pending' && d.items && d.items.some(it=>it.pid===pid));
+if(docIdx>=0){
+  const doc = outDocs[docIdx];
+  // เช็คว่าทุก pid ในใบเบิกถูกตัดสต๊อกแล้วหรือยัง
+  const allDone = doc.items.every(it => 
+    outbounds.some(ob => !ob.void && ob.pid===it.pid && 
+      outbounds.filter(x=>!x.void && x.pid===it.pid)
+        .reduce((s,x)=>s+x.qty,0) >= it.qty
+    )
+  );
+  if(allDone){
+  console.log('allDone! updating DOC:', outDocs[docIdx].id);
+  outDocs[docIdx].status = 'completed';
+  console.log('new status:', outDocs[docIdx].status);
+  try {
+      const r = await apiPost('save_outdoc', {...outDocs[docIdx], items_json: JSON.stringify(outDocs[docIdx].items)});
+      console.log('save_outdoc result:', JSON.stringify(r));
+    } catch(e) {
+      console.error('save_outdoc error:', e.message);
+    }
+    // อัปเดต PO ด้วยถ้ามี poRef
+    if(doc.poRef){
+      const poIdx=poDocs.findIndex(d=>d.id===doc.poRef&&!d.void);
+      if(poIdx>=0){
+        poDocs[poIdx].status='completed';
+        await apiPost('update_po_status',{id:doc.poRef,status:'completed'});
+      }
+    }
+  }
+}
+
     setSyncStatus('synced');
     toast('ตัดสต๊อกสำเร็จ: '+qty+' '+(p?p.unit:''),'ok');
-    soClear(); renderSOHist(); renderDashboard(); updateAlertBadge();
+    soClear(); renderSOHist(); renderDashboard(); updateAlertBadge(); renderObDocs();
   } catch(e){setSyncStatus('error');toast('บันทึกไม่สำเร็จ: '+e.message,'err');}
 }
 
@@ -1203,7 +1234,7 @@ async function generatePO(){
 function renderPODocs(){
   const tb=document.getElementById('po-doc-list');if(!tb)return;
   tb.innerHTML=[...poDocs].reverse().map(d=>{
-    const voidBadge=d.void?'<span class="badge void">ยกเลิกแล้ว</span>':'<span class="badge pending">รอดำเนินการ</span>';
+    const voidBadge=d.void?'<span class="badge void">ยกเลิกแล้ว</span>':d.status==='completed'?'<span class="badge ok">เสร็จสิ้น</span>':d.status==='picking'?'<span class="badge in">สร้างใบเบิกแล้ว</span>':'<span class="badge pending">รอดำเนินการ</span>';
     const cls=d.void?'void-row':'';
     const actions=d.void
       ?`<span style="font-size:11px;color:var(--text-muted)">ยกเลิกแล้ว</span>`
@@ -1319,8 +1350,16 @@ function viewPODoc(id){
 function createPickFromPO(poId){
   closeModal();const doc=poDocs.find(d=>d.id===poId);if(!doc)return;
   pickItems={};doc.items.forEach(it=>{pickItems[it.pid]={qty:it.qty}});
+  currentPoRef = poId;
   goto('outbound');
-  setTimeout(()=>{document.querySelectorAll('.ob-tab')[0].click();const poRef=document.getElementById('ob-po-ref');if(poRef)poRef.value=poId;loadFromPO(poId);renderPickList();toast('โหลดรายการจาก '+poId+' แล้ว','ok');},150);
+  setTimeout(()=>{
+    document.querySelectorAll('.ob-tab')[0].click();
+    const poRef=document.getElementById('ob-po-ref');
+    if(poRef){poRef.value=poId;}
+    loadFromPO(poId);
+    renderPickList();
+    toast('โหลดรายการจาก '+poId+' แล้ว','ok');
+  },300);
 }
 function loadFromPO(poId){
   const infoEl=document.getElementById('ob-po-ref-info');const textEl=document.getElementById('ob-po-ref-text');
@@ -1353,11 +1392,11 @@ function renderPickList(){
 }
 function updatePickQty(pid,v){pickItems[pid].qty=Math.max(1,parseInt(v)||1);renderPickList();}
 function removePickItem(pid){delete pickItems[pid];renderPickList();}
-function clearPicking(){pickItems={};renderPickList();const poRef=document.getElementById('ob-po-ref');if(poRef)poRef.value='';const infoEl=document.getElementById('ob-po-ref-info');if(infoEl)infoEl.style.display='none';}
+function clearPicking(){pickItems={};currentPoRef='';renderPickList();const poRef=document.getElementById('ob-po-ref');if(poRef)poRef.value='';const infoEl=document.getElementById('ob-po-ref-info');if(infoEl)infoEl.style.display='none';}
 
 async function generatePickingList(){
   const pids=Object.keys(pickItems);if(pids.length===0){toast('กรุณาเพิ่มสินค้าก่อน','err');return;}
-  const poRefId=(document.getElementById('ob-po-ref')||{}).value||'';
+  const poRefId=(document.getElementById('ob-po-ref')||{}).value||currentPoRef||'';
   const docId=autoId('DOC-',outDocs);const ts=now();let total=0;
   const items=pids.map(pid=>{const p=getProduct(pid);const qty=pickItems[pid].qty;const sub=p.price*qty;total+=sub;return{pid,name:p.name,unit:p.unit,qty,price:p.price,subtotal:sub};});
   const doc={id:docId,timestamp:ts,items,total,status:'pending',poRef:poRefId,void:false};
@@ -1365,7 +1404,14 @@ async function generatePickingList(){
   try {
     await apiPost('save_outdoc',{...doc,items_json:JSON.stringify(items)});  // ✅ แก้จาก saveOutDoc
     outDocs.push(doc);
-    setSyncStatus('synced');
+if(poRefId){
+  const poIdx=poDocs.findIndex(d=>d.id===poRefId&&!d.void);
+  if(poIdx>=0){
+    poDocs[poIdx].status='picking';
+    await apiPost('update_po_status',{id:poRefId,status:'picking'});
+  }
+}
+setSyncStatus('synced');
     toast('สร้างใบเบิก '+docId+' สำเร็จ','ok');
     clearPicking(); renderObDocs(); viewPickDoc(docId);
   } catch(e){setSyncStatus('error');toast('สร้างไม่สำเร็จ: '+e.message,'err');}
@@ -1374,7 +1420,7 @@ async function generatePickingList(){
 function renderObDocs(){
   const tb=document.getElementById('ob-doc-list');if(!tb)return;
   tb.innerHTML=[...outDocs].reverse().map(d=>{
-    const voidBadge=d.void?'<span class="badge void">ยกเลิกแล้ว</span>':'<span class="badge pending">รอดำเนินการ</span>';
+    const voidBadge=d.void?'<span class="badge void">ยกเลิกแล้ว</span>':d.status==='completed'?'<span class="badge ok">เสร็จสิ้น</span>':d.status==='picking'?'<span class="badge in">สร้างใบเบิกแล้ว</span>':'<span class="badge pending">รอดำเนินการ</span>';
     const cls=d.void?'void-row':'';
     const actions=d.void
       ?`<span style="font-size:11px;color:var(--text-muted)">ยกเลิกแล้ว</span>`
@@ -1944,9 +1990,6 @@ function onScanSuccess(code){
 function closeScanner(){document.getElementById('scanner-modal').classList.add('hidden');if(html5QrCode){html5QrCode.stop().catch(()=>{});html5QrCode=null;}}
 document.getElementById('scanner-modal').addEventListener('click',function(e){if(e.target===this)closeScanner();});
 
-// ==================== INIT ====================
-document.getElementById('appsheet-btn').href = APPSHEET_URL;
-
 autoSyncInterval = setInterval(()=>{
   if(document.visibilityState === 'visible'){
     loadAllData().then(()=>{
@@ -1959,7 +2002,7 @@ autoSyncInterval = setInterval(()=>{
       if(curPage==='alerts') renderAlerts();
     });
   }
-}, 60000);
+}, 30000);
 
 loadAllData();
 </script>
