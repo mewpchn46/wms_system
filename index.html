@@ -19,6 +19,86 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.6}
 a{text-decoration:none;color:inherit}
+
+/* ===== LOGIN SCREEN ===== */
+#login-screen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;background:linear-gradient(135deg,#0f2540 0%,#1a3c5e 60%,#2d6a9f 100%);
+  position:fixed;inset:0;z-index:9999;
+}
+#login-screen.hidden{display:none}
+.login-box{
+  background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:400px;
+  box-shadow:0 24px 64px rgba(0,0,0,0.35);margin:20px;
+  animation:loginFadeIn .4s ease;
+}
+@keyframes loginFadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .brand-icon{
+  width:64px;height:64px;background:linear-gradient(135deg,#1a3c5e,#2d6a9f);
+  border-radius:16px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:14px;box-shadow:0 8px 20px rgba(26,60,94,0.3);
+}
+.login-logo .brand-name{font-size:18px;font-weight:700;color:var(--primary);line-height:1.3}
+.login-logo .brand-sub{font-size:12px;color:var(--text-muted);margin-top:3px}
+.login-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center}
+.login-subtitle{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:28px}
+.login-field{margin-bottom:16px}
+.login-field label{
+  display:block;font-size:12px;font-weight:700;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;
+}
+.login-input-wrap{position:relative}
+.login-input-wrap input{
+  width:100%;padding:12px 14px 12px 42px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:var(--font);color:var(--text);background:#fff;
+  transition:border-color .15s,box-shadow .15s;
+}
+.login-input-wrap input:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(45,106,159,0.12)}
+.login-input-wrap .input-icon{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  font-size:15px;color:var(--text-muted);pointer-events:none;
+}
+.login-input-wrap .toggle-pw{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;font-size:15px;color:var(--text-muted);
+  padding:4px;line-height:1;
+}
+#login-error{
+  display:none;background:var(--danger-bg);color:var(--danger);border:1px solid #f5c0bb;
+  border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;
+  animation:shake .3s ease;
+}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.login-btn{
+  width:100%;padding:13px;background:linear-gradient(135deg,#1a3c5e,#2d6a9f);
+  color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;
+  font-family:var(--font);cursor:pointer;transition:all .15s;
+  box-shadow:0 4px 12px rgba(26,60,94,0.3);
+}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(26,60,94,0.4)}
+.login-btn:active{transform:scale(0.98)}
+.login-footer{text-align:center;margin-top:20px;font-size:11.5px;color:var(--text-muted)}
+
+/* ===== USER BADGE IN TOPBAR ===== */
+#user-badge{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;
+  background:#f0f3f8;border:1.5px solid var(--border);border-radius:22px;
+  font-size:12.5px;font-weight:700;color:var(--primary);cursor:default;white-space:nowrap;
+}
+#user-badge .user-avatar{
+  width:24px;height:24px;background:linear-gradient(135deg,#1a3c5e,#2d6a9f);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:#fff;font-weight:700;flex-shrink:0;
+}
+#logout-btn{
+  padding:6px 12px;border-radius:22px;border:1.5px solid #f5c0bb;background:var(--danger-bg);
+  color:var(--danger);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);
+  transition:all .15s;white-space:nowrap;
+}
+#logout-btn:hover{background:#f9c9c5}
+
+/* ===== MAIN APP ===== */
 #app{display:flex;height:100vh;overflow:hidden}
 #sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0f2540 0%,#1a3c5e 100%);color:#fff;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
 #sidebar .logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
@@ -120,7 +200,7 @@ input[readonly]{background:#f7f8fa;cursor:default}
   .stat-grid{grid-template-columns:1fr 1fr}
   #burger{display:flex!important}
   #sync-badge span.sync-text{display:none}
-  #appsheet-btn span.as-text{display:none}
+  #user-badge .user-name{display:none}
 }
 #burger{display:none;align-items:center;justify-content:center;width:36px;height:36px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:18px;background:#fff}
 #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:999}
@@ -204,11 +284,12 @@ input[readonly]{background:#f7f8fa;cursor:default}
 .ob-tab{flex:1;padding:11px 16px;text-align:center;font-size:13.5px;font-weight:700;cursor:pointer;border:none;background:transparent;font-family:var(--font);color:var(--text-muted);transition:all .15s}
 .ob-tab.active{background:var(--primary);color:#fff}
 .ob-tab-panel{display:none}.ob-tab-panel.active{display:block}
-.po-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;margin-bottom:8px;background:#fafbfc}
+.po-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1.5px solid var(--border);border-radius:9px;margin-bottom:8px;background:#fafbfc;overflow:hidden}
 .po-item .pname{font-size:13px;font-weight:600;flex:1;line-height:1.4}
 .po-item .pname small{display:block;font-size:11px;color:var(--text-muted);font-weight:400}
 .po-item .pqty{width:80px}
 .po-item .punit{font-size:12px;color:var(--text-muted);width:50px;text-align:center}
+.po-item img{width:60px!important;height:60px!important;object-fit:cover;border-radius:8px;flex-shrink:0;max-width:60px!important}
 .pick-doc-wrap{font-family:'Sarabun',sans-serif}
 .pick-doc-header{background:linear-gradient(135deg,#1a3c5e 0%,#2d6a9f 100%);color:#fff;padding:24px 28px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:flex-start}
 .pick-doc-header .company{font-size:18px;font-weight:700;margin-bottom:2px}
@@ -258,13 +339,44 @@ input[readonly]{background:#f7f8fa;cursor:default}
 </head>
 <body>
 
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand-icon">🪔</div>
+      <div class="brand-name">ธูปหอมพรหมประสิทธิ์</div>
+      <div class="brand-sub">ระบบจัดการคลังสินค้า WMS</div>
+    </div>
+    <div class="login-title">Welcome back</div>
+    <div class="login-subtitle">กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</div>
+    <div id="login-error">❌ Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่</div>
+    <div class="login-field">
+      <label>Username</label>
+      <div class="login-input-wrap">
+        <span class="input-icon">👤</span>
+        <input type="text" id="login-username" placeholder="กรอก Username" autocomplete="username">
+      </div>
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <div class="login-input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" id="login-password" placeholder="กรอก Password" autocomplete="current-password" id="login-password">
+        <button class="toggle-pw" onclick="togglePassword()" type="button" id="toggle-pw-btn">👁️</button>
+      </div>
+    </div>
+    <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ →</button>
+    <div class="login-footer">© ธูปหอมพรหมประสิทธิ์ · ระบบภายในองค์กร</div>
+  </div>
+</div>
+
 <!-- LOADING OVERLAY -->
-<div id="loading-overlay">
+<div id="loading-overlay" class="hidden">
   <div class="loading-spinner"></div>
   <div class="loading-text">กำลังโหลดข้อมูลจาก Google Sheets...</div>
 </div>
 
-<div id="app">
+<div id="app" style="display:none">
   <div id="sidebar">
     <div class="logo">
       <div class="brand"><span class="dot"></span>ธูปหอมพรหมประสิทธิ์</div>
@@ -301,6 +413,12 @@ input[readonly]{background:#f7f8fa;cursor:default}
         <span class="sync-dot"></span>
         <span class="sync-text" id="sync-text">ออฟไลน์</span>
       </button>
+      <!-- User Badge -->
+      <div id="user-badge">
+        <div class="user-avatar" id="user-avatar-text">?</div>
+        <span class="user-name" id="user-display-name">-</span>
+      </div>
+      <button id="logout-btn" onclick="doLogout()">🚪 ออกจากระบบ</button>
     </div>
     <div id="content">
 
@@ -692,9 +810,101 @@ input[readonly]{background:#f7f8fa;cursor:default}
 <input type="file" id="edit-img-input" accept="image/*" style="display:none" onchange="saveEditedImage(this)">
 
 <script>
+// ==================== LOGIN SYSTEM ====================
+const USERS = {
+  'Supachai':  { password: 'Suwanachart_11', displayName: 'Supachai (เจ้าของ)' },
+  'Chayapol':  { password: 'Suwanachart_12', displayName: 'Chayapol (ลูก)' }
+};
+
+let currentUser = null;
+
+function togglePassword(){
+  const inp = document.getElementById('login-password');
+  const btn = document.getElementById('toggle-pw-btn');
+  if(inp.type === 'password'){inp.type = 'text'; btn.textContent = '🙈';}
+  else{inp.type = 'password'; btn.textContent = '👁️';}
+}
+
+function doLogin(){
+  const username = (document.getElementById('login-username').value || '').trim();
+  const password = (document.getElementById('login-password').value || '');
+  const errEl = document.getElementById('login-error');
+
+  if(!username || !password){
+    errEl.style.display = 'block';
+    errEl.textContent = '❌ กรุณากรอก Username และ Password';
+    return;
+  }
+
+  const user = USERS[username];
+  if(!user || user.password !== password){
+    errEl.style.display = 'block';
+    errEl.textContent = '❌ Username หรือ Password ไม่ถูกต้อง กรุณาลองใหม่';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-password').focus();
+    return;
+  }
+
+  // Login success
+  currentUser = { username, displayName: user.displayName };
+  sessionStorage.setItem('wms_user', JSON.stringify(currentUser));
+  errEl.style.display = 'none';
+
+  // Update UI
+  document.getElementById('user-display-name').textContent = username;
+  document.getElementById('user-avatar-text').textContent = username.charAt(0).toUpperCase();
+
+  // Show app
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('loading-overlay').classList.remove('hidden');
+
+  loadAllData();
+}
+
+function doLogout(){
+  sessionStorage.removeItem('wms_user');
+  currentUser = null;
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-password').type = 'password';
+  document.getElementById('toggle-pw-btn').textContent = '👁️';
+}
+
+function getCurrentUsername(){
+  return currentUser ? currentUser.username : 'พนักงาน';
+}
+
+// Check existing session on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = sessionStorage.getItem('wms_user');
+  if(saved){
+    try {
+      currentUser = JSON.parse(saved);
+      document.getElementById('user-display-name').textContent = currentUser.username;
+      document.getElementById('user-avatar-text').textContent = currentUser.username.charAt(0).toUpperCase();
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('loading-overlay').classList.remove('hidden');
+      loadAllData();
+    } catch(e) {
+      sessionStorage.removeItem('wms_user');
+    }
+  }
+});
+
+// Enter key on login
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && !document.getElementById('login-screen').classList.contains('hidden')){
+    doLogin();
+  }
+});
+
 // ==================== CONFIG ====================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzYlzVA-O_SPkibWtGMKd60onmQHn5zWsLHWXTqtkGj_3PSPylidRu9xHmooOZ4vW9y/exec';
-const APPSHEET_URL = 'https://www.appsheet.com/start/YOUR_APPSHEET_APP_ID'; // ← เปลี่ยนเป็น URL AppSheet ของคุณ
 
 // ==================== SYNC STATUS ====================
 let syncStatus = 'offline';
@@ -757,7 +967,6 @@ let poItems   = {};
 var currentPoRef = '';
 
 // ==================== LOAD ALL DATA ====================
-// ✅ แก้ไข action names ให้ตรงกับ Apps Script ทั้งหมด
 async function loadAllData(){
   setSyncStatus('syncing');
   try {
@@ -765,9 +974,9 @@ async function loadAllData(){
       apiGet('get_products'),
       apiGet('get_inbound'),
       apiGet('get_outbound'),
-      apiGet('get_movements'),   // ✅ แก้จาก get_Movements
-      apiGet('get_outdocs'),     // ✅ แก้จาก get_OutDocs
-      apiGet('get_po_docs'),     // ✅ แก้จาก get_PODocs
+      apiGet('get_movements'),
+      apiGet('get_outdocs'),
+      apiGet('get_po_docs'),
     ]);
     products  = (prods.data  || []).filter(p => p.id);
     inbounds  = (ibs.data    || []);
@@ -781,13 +990,13 @@ async function loadAllData(){
     movements = movements.map(r=>({...r, qty:Number(r.qty)||0, void:r.void==='TRUE'||r.void===true,
       isVoid:r.isVoid==='TRUE'||r.isVoid===true, isCorrection:r.isCorrection==='TRUE'||r.isCorrection===true}));
     outDocs   = outDocs.map(d=>({...d, total:Number(d.total)||0, void:d.void==='TRUE'||d.void===true,
-  items: safeParseJSON(d.items_json, []),
-  poRef: d.po_ref || d.poRef || ''}));
+      items: safeParseJSON(d.items_json, []),
+      poRef: d.po_ref || d.poRef || ''}));
     poDocs    = poDocs.map(d=>({...d, total:Number(d.total)||0, void:d.void==='TRUE'||d.void===true,
       items: safeParseJSON(d.items_json, [])}));
     products  = products.map(p=>({...p, price:Number(p.price)||0, custom:p.custom==='TRUE'||p.custom===true,
-  override_base:p.override_base==='TRUE'||p.override_base===true,
-  image_url:p.image_url||''}));
+      override_base:p.override_base==='TRUE'||p.override_base===true,
+      image_url:p.image_url||''}));
 
     setSyncStatus('synced');
     populateAllSelects();
@@ -932,10 +1141,10 @@ async function saveInbound(){
   const note=document.getElementById('ib-note').value;
   if(!pid||qty<1){toast('กรุณาเลือกสินค้าและกรอกจำนวน','err');return;}
   const p=getProduct(pid);
-  const rec={id:autoId('IB-',inbounds),pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,note,timestamp:now(),user:'พนักงาน',void:false};
+  const rec={id:autoId('IB-',inbounds),pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,note,timestamp:now(),user:getCurrentUsername(),void:false};
   setSyncStatus('syncing');
   try {
-    await apiPost('save_inbound', rec);  // ✅ แก้จาก saveInbound
+    await apiPost('save_inbound', rec);
     inbounds.push(rec);
     movements.push({type:'IN',docId:rec.id,pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,note,timestamp:rec.timestamp,user:rec.user,void:false,isVoid:false,isCorrection:false});
     setSyncStatus('synced');
@@ -1000,7 +1209,7 @@ async function saveEditInbound(id){
   const oldQty=inbounds[idx].qty;
   setSyncStatus('syncing');
   try {
-    await apiPost('edit_inbound',{id,qty,note,reason,oldQty});  // ✅ แก้จาก editInbound
+    await apiPost('edit_inbound',{id,qty,note,reason,oldQty});
     inbounds[idx].qty=qty; inbounds[idx].note=note;
     const mi=movements.findIndex(m=>m.docId===id&&m.type==='IN');
     if(mi>=0){movements[mi].qty=qty;movements[mi].note=note;}
@@ -1021,7 +1230,7 @@ async function voidInbound(id){
   if(!res.ok)return;
   setSyncStatus('syncing');
   try {
-    await apiPost('void_inbound',{id,reason:res.reason});  // ✅ แก้จาก voidInbound
+    await apiPost('void_inbound',{id,reason:res.reason});
     const idx=inbounds.findIndex(x=>x.id===id);
     inbounds[idx].void=true; inbounds[idx].voidReason=res.reason;
     setSyncStatus('synced');
@@ -1050,45 +1259,33 @@ async function saveStockOut(){
   const stk=getStock(pid);
   if(qty>stk){toast('สต๊อกไม่พอ! มีเพียง '+stk+' '+getProduct(pid).unit,'err');return;}
   const p=getProduct(pid);
-  const rec={id:autoId('OUT-',outbounds),pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,reason,timestamp:now(),user:'พนักงาน',void:false};
+  const pendingDocs = outDocs.filter(d => !d.void && d.status === 'pending' && d.items.some(it => it.pid === pid));
+  const exactMatch = pendingDocs.find(d => d.items.find(it => it.pid === pid)?.qty === qty);
+  const matchDoc = exactMatch || pendingDocs[0] || null;
+  const rec={id:autoId('OUT-',outbounds),pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,reason,doc_ref:matchDoc?matchDoc.id:'',timestamp:now(),user:getCurrentUsername(),void:false};
   setSyncStatus('syncing');
   try {
     await apiPost('save_outbound', rec);
     outbounds.push(rec);
     movements.push({type:'OUT',docId:rec.id,pid,product_name:p?p.name:'',unit:p?p.unit:'',qty,note:reason,timestamp:rec.timestamp,user:rec.user,void:false,isVoid:false,isCorrection:false});
-
-    // อัปเดตสถานะใบเบิกถ้าตัดครบทุกรายการแล้ว
-const docIdx = outDocs.findIndex(d => !d.void && d.status==='pending' && d.items && d.items.some(it=>it.pid===pid));
-if(docIdx>=0){
-  const doc = outDocs[docIdx];
-  // เช็คว่าทุก pid ในใบเบิกถูกตัดสต๊อกแล้วหรือยัง
-  const allDone = doc.items.every(it => 
-    outbounds.some(ob => !ob.void && ob.pid===it.pid && 
-      outbounds.filter(x=>!x.void && x.pid===it.pid)
-        .reduce((s,x)=>s+x.qty,0) >= it.qty
-    )
-  );
-  if(allDone){
-  console.log('allDone! updating DOC:', outDocs[docIdx].id);
-  outDocs[docIdx].status = 'completed';
-  console.log('new status:', outDocs[docIdx].status);
-  try {
-      const r = await apiPost('save_outdoc', {...outDocs[docIdx], items_json: JSON.stringify(outDocs[docIdx].items)});
-      console.log('save_outdoc result:', JSON.stringify(r));
-    } catch(e) {
-      console.error('save_outdoc error:', e.message);
-    }
-    // อัปเดต PO ด้วยถ้ามี poRef
-    if(doc.poRef){
-      const poIdx=poDocs.findIndex(d=>d.id===doc.poRef&&!d.void);
-      if(poIdx>=0){
-        poDocs[poIdx].status='completed';
-        await apiPost('update_po_status',{id:doc.poRef,status:'completed'});
+    const docIdx = matchDoc ? outDocs.findIndex(d=>d.id===matchDoc.id) : -1;
+    if(docIdx>=0){
+      const doc = outDocs[docIdx];
+      const docOutbounds=[...outbounds,rec].filter(x=>!x.void&&x.doc_ref===doc.id);
+      const allDone=docOutbounds.length>0&&doc.items.every(it=>
+        docOutbounds.filter(x=>x.pid===it.pid).reduce((s,x)=>s+x.qty,0)>=it.qty
+      );
+      if(allDone){
+        outDocs[docIdx].status='completed';
+        try {
+          await apiPost('save_outdoc', {...outDocs[docIdx], items_json: JSON.stringify(outDocs[docIdx].items)});
+        } catch(e) { console.error('save_outdoc error:', e.message); }
+        if(doc.poRef){
+          const poIdx=poDocs.findIndex(d=>d.id===doc.poRef&&!d.void);
+          if(poIdx>=0){poDocs[poIdx].status='completed';await apiPost('update_po_status',{id:doc.poRef,status:'completed'});}
+        }
       }
     }
-  }
-}
-
     setSyncStatus('synced');
     toast('ตัดสต๊อกสำเร็จ: '+qty+' '+(p?p.unit:''),'ok');
     soClear(); renderSOHist(); renderDashboard(); updateAlertBadge(); renderObDocs();
@@ -1160,7 +1357,7 @@ async function saveEditStockOut(id){
   if(qty>stkWithoutThis){toast('สต๊อกไม่พอ!','err');return;}
   setSyncStatus('syncing');
   try {
-    await apiPost('edit_outbound',{id,qty,reason,note,oldQty});  // ✅ แก้จาก editOutbound
+    await apiPost('edit_outbound',{id,qty,reason,note,oldQty});
     outbounds[idx].qty=qty; outbounds[idx].reason=reason;
     setSyncStatus('synced');
     closeModal(); toast('แก้ไขรายการ '+id+' สำเร็จ','ok');
@@ -1179,7 +1376,7 @@ async function voidStockOut(id){
   if(!res.ok)return;
   setSyncStatus('syncing');
   try {
-    await apiPost('void_outbound',{id,reason:res.reason});  // ✅ แก้จาก voidOutbound
+    await apiPost('void_outbound',{id,reason:res.reason});
     const idx=outbounds.findIndex(x=>x.id===id);
     outbounds[idx].void=true; outbounds[idx].voidReason=res.reason;
     setSyncStatus('synced');
@@ -1200,12 +1397,23 @@ function renderPOItemList(){
   el.innerHTML=pids.map(pid=>{
     const p=getProduct(pid);const qty=poItems[pid].qty;const sub=p.price*qty;total+=sub;
     const img=getProductImg(pid);
-    const thumb=img?`<img class="pthumb" src="${img}">`:`<div class="pthumb-empty">📦</div>`;
-    return`<div class="po-item">${thumb}<div class="pname">${p.id}<small>${p.name}</small></div>
-      <input class="pqty" type="number" min="1" value="${qty}" onchange="updatePOQty('${pid}',this.value)">
-      <div class="punit">${p.unit}</div>
-      <div class="pprice">฿${fmt(p.price)}<br><b style="color:var(--primary)">฿${fmt(sub)}</b></div>
-      <button class="btn btn-outline btn-sm" onclick="removePOItem('${pid}')">✕</button></div>`;
+    const thumb=img?`<img src="${img}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">`:`<div style="width:60px;height:60px;border-radius:8px;background:#f0f3f8;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📦</div>`;
+    return`<div class="po-item" style="flex-direction:column;align-items:flex-start">
+  <div style="display:flex;align-items:center;gap:10px;width:100%">
+    <div style="width:60px;height:60px;flex-shrink:0">${thumb}</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700">${p.id}</div>
+      <div style="font-size:12px;color:var(--text-muted)">${p.name}</div>
+      <div style="font-size:12px;color:var(--text-muted)">฿${fmt(p.price)}/${p.unit}</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="removePOItem('${pid}')">✕</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px;width:100%">
+    <input class="pqty" type="number" min="1" value="${qty}" onchange="updatePOQty('${pid}',this.value)" style="width:80px">
+    <div style="font-size:12px;color:var(--text-muted)">${p.unit}</div>
+    <div style="font-weight:700;color:var(--primary);margin-left:auto">฿${fmt(sub)}</div>
+  </div>
+</div>`;
   }).join('');
   document.getElementById('po-summary').style.display='block';
   document.getElementById('po-total').textContent='฿'+fmt(total);
@@ -1216,14 +1424,14 @@ function clearPO(){poItems={};renderPOItemList();document.getElementById('po-req
 
 async function generatePO(){
   const pids=Object.keys(poItems);if(pids.length===0){toast('กรุณาเพิ่มสินค้าก่อน','err');return;}
-  const requester=(document.getElementById('po-requester').value||'').trim()||'พนักงาน';
+  const requester=(document.getElementById('po-requester').value||'').trim()||getCurrentUsername();
   const note=(document.getElementById('po-note').value||'').trim();
   const docId=autoId('PO-',poDocs);const ts=now();let total=0;
   const items=pids.map(pid=>{const p=getProduct(pid);const qty=poItems[pid].qty;const sub=p.price*qty;total+=sub;return{pid,name:p.name,unit:p.unit,qty,price:p.price,subtotal:sub};});
   const doc={id:docId,timestamp:ts,requester,note,items,total,status:'pending',void:false};
   setSyncStatus('syncing');
   try {
-    await apiPost('save_po_doc',{...doc,items_json:JSON.stringify(items)});  // ✅ แก้จาก savePODoc
+    await apiPost('save_po_doc',{...doc,items_json:JSON.stringify(items)});
     poDocs.push(doc);
     setSyncStatus('synced');
     toast('สร้างคำสั่งซื้อ '+docId+' สำเร็จ','ok');
@@ -1277,15 +1485,15 @@ async function confirmUpdatePO(oldId){
   if(!reason){toast('กรุณาระบุเหตุผล','err');return;}
   const pids=Object.keys(poItems);if(pids.length===0){toast('กรุณาเพิ่มสินค้าก่อน','err');return;}
   const oidx=poDocs.findIndex(d=>d.id===oldId);
-  const requester=(document.getElementById('po-requester').value||'').trim()||'พนักงาน';
+  const requester=(document.getElementById('po-requester').value||'').trim()||getCurrentUsername();
   const note=(document.getElementById('po-note').value||'').trim();
   const docId=autoId('PO-',poDocs);const ts=now();let total=0;
   const items=pids.map(pid=>{const p=getProduct(pid);const qty=poItems[pid].qty;const sub=p.price*qty;total+=sub;return{pid,name:p.name,unit:p.unit,qty,price:p.price,subtotal:sub};});
   const doc={id:docId,timestamp:ts,requester,note,items,total,status:'pending',void:false,replacedFrom:oldId};
   setSyncStatus('syncing');
   try {
-    await apiPost('void_po_doc',{id:oldId,reason:'แก้ไขเป็น PO ใหม่ | '+reason});  // ✅ แก้จาก voidPODoc
-    await apiPost('save_po_doc',{...doc,items_json:JSON.stringify(items)});           // ✅ แก้จาก savePODoc
+    await apiPost('void_po_doc',{id:oldId,reason:'แก้ไขเป็น PO ใหม่ | '+reason});
+    await apiPost('save_po_doc',{...doc,items_json:JSON.stringify(items)});
     if(oidx>=0){poDocs[oidx].void=true;poDocs[oidx].voidReason='แก้ไขเป็น PO ใหม่ | '+reason;}
     poDocs.push(doc);
     setSyncStatus('synced');
@@ -1303,7 +1511,7 @@ async function voidPODoc(id){
   if(!res.ok)return;
   setSyncStatus('syncing');
   try {
-    await apiPost('void_po_doc',{id,reason:res.reason});  // ✅ แก้จาก voidPODoc
+    await apiPost('void_po_doc',{id,reason:res.reason});
     const idx=poDocs.findIndex(d=>d.id===id);
     poDocs[idx].void=true; poDocs[idx].voidReason=res.reason;
     setSyncStatus('synced');
@@ -1381,11 +1589,23 @@ function renderPickList(){
   let total=0;
   el.innerHTML=pids.map(pid=>{
     const p=getProduct(pid);const qty=pickItems[pid].qty;const sub=p.price*qty;total+=sub;
-    const img=getProductImg(pid);const thumb=img?`<img class="pthumb" src="${img}">`:`<div class="pthumb-empty">📦</div>`;
-    return`<div class="pick-item">${thumb}<div class="pname">${p.id}<small>${p.name}</small></div>
-      <input class="pqty" type="number" min="1" value="${qty}" onchange="updatePickQty('${pid}',this.value)">
-      <div class="pprice">฿${fmt(p.price)}/${p.unit}<br><b style="color:var(--primary)">฿${fmt(sub)}</b></div>
-      <button class="btn btn-outline btn-sm" onclick="removePickItem('${pid}')">✕</button></div>`;
+    const img=getProductImg(pid);const thumb=img?`<img src="${img}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">`:`<div style="width:60px;height:60px;border-radius:8px;background:#f0f3f8;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📦</div>`;
+    return`<div class="pick-item" style="flex-direction:column;align-items:flex-start">
+  <div style="display:flex;align-items:center;gap:10px;width:100%">
+    ${thumb}
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700">${p.id}</div>
+      <div style="font-size:12px;color:var(--text-muted)">${p.name}</div>
+      <div style="font-size:12px;color:var(--text-muted)">฿${fmt(p.price)}/${p.unit}</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="removePickItem('${pid}')">✕</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:10px;width:100%">
+    <input class="pqty" type="number" min="1" value="${qty}" onchange="updatePickQty('${pid}',this.value)" style="width:80px">
+    <div style="font-size:12px;color:var(--text-muted)">${p.unit}</div>
+    <div style="font-weight:700;color:var(--primary);margin-left:auto">฿${fmt(sub)}</div>
+  </div>
+</div>`;
   }).join('');
   document.getElementById('pick-summary').style.display='block';
   document.getElementById('pick-total').textContent='฿'+fmt(total);
@@ -1402,16 +1622,13 @@ async function generatePickingList(){
   const doc={id:docId,timestamp:ts,items,total,status:'pending',poRef:poRefId,void:false};
   setSyncStatus('syncing');
   try {
-    await apiPost('save_outdoc',{...doc,items_json:JSON.stringify(items)});  // ✅ แก้จาก saveOutDoc
+    await apiPost('save_outdoc',{...doc,items_json:JSON.stringify(items)});
     outDocs.push(doc);
-if(poRefId){
-  const poIdx=poDocs.findIndex(d=>d.id===poRefId&&!d.void);
-  if(poIdx>=0){
-    poDocs[poIdx].status='picking';
-    await apiPost('update_po_status',{id:poRefId,status:'picking'});
-  }
-}
-setSyncStatus('synced');
+    if(poRefId){
+      const poIdx=poDocs.findIndex(d=>d.id===poRefId&&!d.void);
+      if(poIdx>=0){poDocs[poIdx].status='picking';await apiPost('update_po_status',{id:poRefId,status:'picking'});}
+    }
+    setSyncStatus('synced');
     toast('สร้างใบเบิก '+docId+' สำเร็จ','ok');
     clearPicking(); renderObDocs(); viewPickDoc(docId);
   } catch(e){setSyncStatus('error');toast('สร้างไม่สำเร็จ: '+e.message,'err');}
@@ -1467,8 +1684,8 @@ async function confirmUpdatePickDoc(oldId){
   const doc={id:docId,timestamp:ts,items,total,status:'pending',poRef:poRefId,void:false,replacedFrom:oldId};
   setSyncStatus('syncing');
   try {
-    await apiPost('void_outdoc',{id:oldId,reason:'แก้ไขเป็นใบเบิกใหม่ | '+reason});  // ✅ แก้จาก voidOutDoc
-    await apiPost('save_outdoc',{...doc,items_json:JSON.stringify(items)});             // ✅ แก้จาก saveOutDoc
+    await apiPost('void_outdoc',{id:oldId,reason:'แก้ไขเป็นใบเบิกใหม่ | '+reason});
+    await apiPost('save_outdoc',{...doc,items_json:JSON.stringify(items)});
     if(oidx>=0){outDocs[oidx].void=true;}
     outDocs.push(doc);
     setSyncStatus('synced');
@@ -1486,7 +1703,7 @@ async function voidPickDoc(id){
   if(!res.ok)return;
   setSyncStatus('syncing');
   try {
-    await apiPost('void_outdoc',{id,reason:res.reason});  // ✅ แก้จาก voidOutDoc
+    await apiPost('void_outdoc',{id,reason:res.reason});
     const idx=outDocs.findIndex(d=>d.id===id);
     outDocs[idx].void=true; outDocs[idx].voidReason=res.reason;
     setSyncStatus('synced');
@@ -1525,7 +1742,7 @@ function viewPickDoc(id){
       <div class="pick-doc-meta" style="grid-template-columns:repeat(${doc.poRef?4:3},1fr)">
         <div class="meta-item"><div class="mlbl">วันที่สร้างใบเบิก</div><div class="mval">${doc.timestamp}</div></div>
         <div class="meta-item"><div class="mlbl">จำนวนรายการ</div><div class="mval">${doc.items.length} รายการ</div></div>
-        <div class="meta-item"><div class="mlbl">สร้างโดย</div><div class="mval">พนักงาน</div></div>${poInfo}
+        <div class="meta-item"><div class="mlbl">สร้างโดย</div><div class="mval">${getCurrentUsername()}</div></div>${poInfo}
       </div>
       <table class="pick-doc-table">
         <thead><tr>
@@ -1602,7 +1819,7 @@ async function addNewProduct(){
   if(getAllProducts().find(p=>p.id===id)){toast('รหัสสินค้า "'+id+'" มีอยู่แล้ว','err');return;}
   setSyncStatus('syncing');
   try {
-    await apiPost('add_product',{id,name,unit,price,custom:true,override_base:false,image_url:''});  // ✅ แก้จาก addProduct
+    await apiPost('add_product',{id,name,unit,price,custom:true,override_base:false,image_url:''});
     products.push({id,name,unit,price,custom:true,override_base:false});
     if(newProdImgData){productImages[id]=newProdImgData;}
     setSyncStatus('synced');
@@ -1675,7 +1892,7 @@ async function saveEditProduct(id){
   if(!name||!unit){toast('กรุณากรอกข้อมูลให้ครบ','err');return;}
   setSyncStatus('syncing');
   try {
-    await apiPost('edit_product',{id,name,unit,price});  // ✅ แก้จาก editProduct
+    await apiPost('edit_product',{id,name,unit,price});
     const idx=products.findIndex(p=>p.id===id);
     if(idx>=0){products[idx].name=name;products[idx].unit=unit;products[idx].price=price;}
     setSyncStatus('synced');
@@ -1696,7 +1913,7 @@ async function deleteProduct(id){
   if(!res.ok)return;
   setSyncStatus('syncing');
   try {
-    await apiPost('delete_product',{id});  // ✅ แก้จาก deleteProduct
+    await apiPost('delete_product',{id});
     products=products.filter(p=>p.id!==id);
     delete productImages[id];
     setSyncStatus('synced');
@@ -1778,8 +1995,9 @@ function renderDashboard(){
   const PRODUCTS=getAllProducts();
   document.getElementById('st-total').textContent=PRODUCTS.length;
   const todayStr=today();
-  const inToday=inbounds.filter(r=>r.timestamp.includes(todayStr)&&!r.void).reduce((s,r)=>s+r.qty,0);
-  const outToday=outbounds.filter(r=>r.timestamp.includes(todayStr)&&!r.void).reduce((s,r)=>s+r.qty,0);
+  const todayISO=new Date().toISOString().slice(0,10);
+  const inToday=inbounds.filter(r=>(r.timestamp.includes(todayStr)||r.timestamp.includes(todayISO))&&!r.void).reduce((s,r)=>s+r.qty,0);
+  const outToday=outbounds.filter(r=>(r.timestamp.includes(todayStr)||r.timestamp.includes(todayISO))&&!r.void).reduce((s,r)=>s+r.qty,0);
   const thresh=getLowThreshold();
   const lowCount=PRODUCTS.filter(p=>getStock(p.id)<thresh).length;
   document.getElementById('st-in').textContent=inToday;
@@ -1991,7 +2209,7 @@ function closeScanner(){document.getElementById('scanner-modal').classList.add('
 document.getElementById('scanner-modal').addEventListener('click',function(e){if(e.target===this)closeScanner();});
 
 autoSyncInterval = setInterval(()=>{
-  if(document.visibilityState === 'visible'){
+  if(document.visibilityState === 'visible' && currentUser){
     loadAllData().then(()=>{
       if(curPage==='dashboard') renderDashboard();
       if(curPage==='inventory') renderInventory();
@@ -2003,8 +2221,6 @@ autoSyncInterval = setInterval(()=>{
     });
   }
 }, 30000);
-
-loadAllData();
 </script>
 </body>
 </html>
