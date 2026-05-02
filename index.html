@@ -1032,6 +1032,12 @@ function getStock(pid){
 function fmt(n){ return Number(n).toLocaleString('th-TH'); }
 function now(){ return new Date().toLocaleString('th-TH',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 function today(){ return new Date().toLocaleDateString('th-TH',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}); }
+function formatDateTime(val){
+  if(!val)return'-';
+  const d=new Date(val);
+  if(isNaN(d.getTime()))return val;
+  return d.toLocaleString('th-TH',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
 function autoId(prefix, list){ return prefix+(list.length+1).toString().padStart(4,'0'); }
 function getLowThreshold(){ return parseInt((document.getElementById('low-threshold')||{value:10}).value)||10; }
 
@@ -1168,7 +1174,7 @@ function renderIBHist(){
           <button class="btn btn-danger btn-sm" onclick="voidInbound('${r.id}')">🚫 Void</button>
         </div>`;
     const cls=r.void?'void-row':'';
-    return`<tr class="${cls}"><td>${r.id}</td><td>${r.timestamp}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td>
+    return`<tr class="${cls}"><td>${r.id}</td><td>${formatDateTime(r.timestamp)}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td>
       <td style="text-align:right;font-weight:600">${r.void?'<s>':'+'}${fmt(r.qty)}${r.void?'</s>':''}</td>
       <td>${r.note||'-'}${r.voidReason?'<br><small style="color:var(--danger)">เหตุผล Void: '+r.voidReason+'</small>':''}</td>
       <td>${voidBadge}</td><td>${actions}</td></tr>`;
@@ -1304,7 +1310,7 @@ function renderSOHist(){
           <button class="btn btn-danger btn-sm" onclick="voidStockOut('${r.id}')">🚫 Void</button>
         </div>`;
     const cls=r.void?'void-row':'';
-    return`<tr class="${cls}"><td>${r.id}</td><td>${r.timestamp}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td>
+    return`<tr class="${cls}"><td>${r.id}</td><td>${formatDateTime(r.timestamp)}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td>
       <td style="text-align:right;font-weight:700;color:${r.void?'var(--text-muted)':'var(--danger)'}">
         ${r.void?'<s>':''}-${fmt(r.qty)}${r.void?'</s>':''}</td>
       <td>${r.reason||'-'}${r.voidReason?'<br><small style="color:var(--danger)">เหตุผล Void: '+r.voidReason+'</small>':''}</td>
@@ -1452,7 +1458,7 @@ function renderPODocs(){
           <button class="btn btn-primary btn-sm" onclick="createPickFromPO('${d.id}')">สร้างใบเบิก</button>
           <button class="btn btn-danger btn-sm" onclick="voidPODoc('${d.id}')">🚫 Void</button>
         </div>`;
-    return`<tr class="${cls}"><td><b>${d.id}</b></td><td>${d.timestamp}</td><td>${d.requester||'-'}</td>
+    return`<tr class="${cls}"><td><b>${d.id}</b></td><td>${formatDateTime(d.timestamp)}</td><td>${d.requester||'-'}</td>
       <td>${d.items.length} รายการ</td><td>฿${fmt(d.total)}</td><td>${voidBadge}</td><td>${actions}</td></tr>`;
   }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">ยังไม่มีคำสั่งซื้อ</td></tr>';
 }
@@ -1534,7 +1540,7 @@ function viewPODoc(id){
     <div style="font-size:18px;font-weight:700;color:var(--primary);margin-bottom:16px">คำสั่งซื้อ ${doc.id}${doc.void?' (ยกเลิกแล้ว)':''}</div>
     ${voidNotice}
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;padding:14px;background:#f8f9fb;border-radius:10px;border:1px solid var(--border)">
-      <div><div style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px">วันที่สร้าง</div><div style="font-weight:600">${doc.timestamp}</div></div>
+      <div><div style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px">วันที่สร้าง</div><div style="font-weight:600">${formatDateTime(doc.timestamp)}</div></div>
       <div><div style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px">ผู้สั่ง</div><div style="font-weight:600">${doc.requester}</div></div>
       <div><div style="font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px">หมายเหตุ</div><div style="font-weight:600">${doc.note||'-'}</div></div>
     </div>
@@ -1649,7 +1655,7 @@ function renderObDocs(){
         </div>`;
     return`<tr class="${cls}"><td><b>${d.id}</b></td>
       <td>${d.poRef?`<span class="badge po">${d.poRef}</span>`:'-'}</td>
-      <td>${d.timestamp}</td><td>${d.items.length} รายการ</td><td>฿${fmt(d.total)}</td>
+      <td>${formatDateTime(d.timestamp)}</td><td>${d.items.length} รายการ</td><td>฿${fmt(d.total)}</td>
       <td>${voidBadge}</td><td>${actions}</td></tr>`;
   }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">ยังไม่มีใบเบิก</td></tr>';
 }
@@ -1740,7 +1746,7 @@ function viewPickDoc(id){
     <div class="pick-doc-body">
       ${voidNotice}
       <div class="pick-doc-meta" style="grid-template-columns:repeat(${doc.poRef?4:3},1fr)">
-        <div class="meta-item"><div class="mlbl">วันที่สร้างใบเบิก</div><div class="mval">${doc.timestamp}</div></div>
+        <div class="meta-item"><div class="mlbl">วันที่สร้างใบเบิก</div><div class="mval">${formatDateTime(doc.timestamp)}</div></div>
         <div class="meta-item"><div class="mlbl">จำนวนรายการ</div><div class="mval">${doc.items.length} รายการ</div></div>
         <div class="meta-item"><div class="mlbl">สร้างโดย</div><div class="mval">${getCurrentUsername()}</div></div>${poInfo}
       </div>
@@ -1983,7 +1989,7 @@ function renderHistory(){
   tb.innerHTML=rows.map(r=>{
     const p=getProduct(r.pid);const cls=r.void?'void-row':r.type==='IN'?'in-row':'out-row';
     const badge=r.void?'<span class="badge void">VOID</span>':r.isVoid?'<span class="badge void">VOID REF</span>':r.isCorrection?'<span class="badge low">แก้ไข</span>':r.type==='IN'?'<span class="badge in">รับเข้า</span>':'<span class="badge outb">เบิกออก</span>';
-    return`<tr class="${cls}"><td>${r.timestamp}</td><td>${r.docId||'-'}</td><td>${badge}</td>
+    return`<tr class="${cls}"><td>${formatDateTime(r.timestamp)}</td><td>${r.docId||'-'}</td><td>${badge}</td>
       <td>${r.pid}</td><td>${r.product_name||p?.name||''}</td>
       <td style="text-align:right;font-weight:600">${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td>
       <td>${r.note||'-'}</td><td>${r.user||'-'}</td></tr>`;
@@ -2008,7 +2014,7 @@ function renderDashboard(){
   const rows=[...movements].filter(r=>!r.isVoid&&!r.isCorrection).reverse().slice(0,10);
   document.getElementById('dash-log').innerHTML=rows.map(r=>{
     const p=getProduct(r.pid);const badge=r.void?'<span class="badge void">VOID</span>':r.type==='IN'?'<span class="badge in">IN</span>':'<span class="badge outb">OUT</span>';
-    return`<tr class="${r.void?'void-row':''}"><td>${r.timestamp}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td>${badge}</td><td>${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td></tr>`;
+    return`<tr class="${r.void?'void-row':''}"><td>${formatDateTime(r.timestamp)}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td>${badge}</td><td>${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td></tr>`;
   }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px">ยังไม่มีข้อมูล</td></tr>';
   document.getElementById('dash-inv').innerHTML=PRODUCTS.map(p=>{
     const stk=getStock(p.id);let badge='<span class="badge ok">ปกติ</span>';
@@ -2103,7 +2109,7 @@ function renderReportMovement(){
   const badge={IN:'<span class="badge in">รับเข้า</span>',OUT:'<span class="badge outb">เบิกออก</span>'};
   document.getElementById('rpt-mv-table').innerHTML=rows.map(r=>{
     const p=getProduct(r.pid);const cls=r.void?'void-row':r.type==='IN'?'in-row':'out-row';
-    return`<tr class="${cls}"><td>${r.timestamp}</td><td>${r.docId||'-'}</td><td>${r.void?'<span class="badge void">VOID</span>':badge[r.type]}</td>
+    return`<tr class="${cls}"><td>${formatDateTime(r.timestamp)}</td><td>${r.docId||'-'}</td><td>${r.void?'<span class="badge void">VOID</span>':badge[r.type]}</td>
       <td>${r.pid}</td><td>${r.product_name||p?.name||''}</td>
       <td style="text-align:right;font-weight:600">${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td>
       <td>${r.note||'-'}</td><td>${r.user||'-'}</td></tr>`;
@@ -2130,7 +2136,7 @@ function exportMovementExcel(){const tf=(document.getElementById('rpt-mv-type')|
 function exportTurnoverExcel(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const of2=days>0?outbounds.filter(r=>{if(r.void)return false;const d=new Date(r.timestamp.replace(/(\d+)\/(\d+)\/(\d+)/,'$3-$2-$1'));return d>=new Date(Date.now()-days*86400000);}):outbounds.filter(r=>!r.void);const data=PRODUCTS.map(p=>({...p,qty:of2.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);downloadCSV(tableToCSV(['รหัสสินค้า','ชื่อสินค้า','หน่วย','จำนวนเบิกรวม'],data.map(d=>[d.id,d.name,d.unit,d.qty])),'turnover_'+new Date().toISOString().slice(0,10)+'.csv');toast('ดาวน์โหลด Excel สำเร็จ','ok');}
 function exportPDFWindow(title,headerHTML,tableHTML){const w=window.open('','_blank');w.document.write(`<html><head><title>${title}</title><style>body{font-family:'Sarabun',sans-serif;padding:24px;font-size:12px}h2{color:#1a3c5e;border-bottom:2px solid #1a3c5e;padding-bottom:6px;margin-bottom:12px}table{width:100%;border-collapse:collapse}th{background:#f0f3f8;font-weight:700;padding:7px 8px;border:1px solid #dce3ed}td{padding:6px 8px;border:1px solid #dce3ed}.ok{color:#1a7f4b}.low{color:#b45309}.out{color:#b71c1c}</style></head><body><h2>${title}</h2><div style="font-size:11px;color:#6b7d91;margin-bottom:14px">${headerHTML}</div><table>${tableHTML}</table><script>window.onload=function(){window.print()}<\/script></body></html>`);w.document.close();}
 function exportStockPDF(){const data=getStockData('','');const sl={ok:'ปกติ',low:'ใกล้หมด',out:'หมดสต๊อก'};const sc={ok:'ok',low:'low',out:'out'};const tv=data.reduce((s,d)=>s+d.value,0);const thead=`<thead><tr><th>รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>รับรวม</th><th>เบิกรวม</th><th>คงเหลือ</th><th>ราคา/หน่วย</th><th>มูลค่าคลัง</th><th>สถานะ</th></tr></thead>`;const tbody='<tbody>'+data.map(d=>`<tr><td>${d.id}</td><td>${d.name}</td><td>${d.unit}</td><td>${fmt(d.tin)}</td><td>${fmt(d.tout)}</td><td class="${sc[d.status]}">${fmt(d.stk)}</td><td>฿${fmt(d.price)}</td><td>฿${fmt(d.value)}</td><td class="${sc[d.status]}">${sl[d.status]}</td></tr>`).join('')+'</tbody>';exportPDFWindow('รายงานสต๊อกคงเหลือ – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | มูลค่ารวม: ฿${fmt(tv)}`,thead+tbody);}
-function exportMovementPDF(){const tf=(document.getElementById('rpt-mv-type')||{}).value||'';let rows=[...movements].reverse();if(tf)rows=rows.filter(r=>r.type===tf);const thead=`<thead><tr><th>วันที่/เวลา</th><th>เลขที่</th><th>ประเภท</th><th>รหัส</th><th>ชื่อสินค้า</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead>`;const tbody='<tbody>'+rows.map(r=>{const p=getProduct(r.pid);return`<tr><td>${r.timestamp}</td><td>${r.docId||'-'}</td><td class="${r.type==='IN'?'ok':'out'}">${r.type==='IN'?'รับเข้า':'เบิกออก'}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td>${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td></tr>`;}).join('')+'</tbody>';exportPDFWindow('รายงานการเคลื่อนไหวสินค้า – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | รายการทั้งหมด: ${rows.length} รายการ`,thead+tbody);}
+function exportMovementPDF(){const tf=(document.getElementById('rpt-mv-type')||{}).value||'';let rows=[...movements].reverse();if(tf)rows=rows.filter(r=>r.type===tf);const thead=`<thead><tr><th>วันที่/เวลา</th><th>เลขที่</th><th>ประเภท</th><th>รหัส</th><th>ชื่อสินค้า</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead>`;const tbody='<tbody>'+rows.map(r=>{const p=getProduct(r.pid);return`<tr><td>${formatDateTime(r.timestamp)}</td><td>${r.docId||'-'}</td><td class="${r.type==='IN'?'ok':'out'}">${r.type==='IN'?'รับเข้า':'เบิกออก'}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td>${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td></tr>`;}).join('')+'</tbody>';exportPDFWindow('รายงานการเคลื่อนไหวสินค้า – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | รายการทั้งหมด: ${rows.length} รายการ`,thead+tbody);}
 function exportTurnoverPDF(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const of2=days>0?outbounds.filter(r=>{if(r.void)return false;const d=new Date(r.timestamp.replace(/(\d+)\/(\d+)\/(\d+)/,'$3-$2-$1'));return d>=new Date(Date.now()-days*86400000);}):outbounds.filter(r=>!r.void);const data=PRODUCTS.map(p=>({...p,qty:of2.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);const thead=`<thead><tr><th>อันดับ</th><th>รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>จำนวนเบิก</th></tr></thead>`;const tbody='<tbody>'+data.map((d,i)=>`<tr><td>${i+1}</td><td>${d.id}</td><td>${d.name}</td><td>${d.unit}</td><td>${fmt(d.qty)}</td></tr>`).join('')+'</tbody>';exportPDFWindow('รายงานหมุนเวียนสินค้า – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | ช่วงเวลา: ${days>0?days+' วันล่าสุด':'ทั้งหมด'}`,thead+tbody);}
 
 // ==================== ALERT CENTER ====================
