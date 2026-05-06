@@ -869,28 +869,48 @@ function now(){
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
   const tz = new Date(d.toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
-  return `${pad(tz.getDate())}/${pad(tz.getMonth()+1)}/${tz.getFullYear()} ${pad(tz.getHours())}:${pad(tz.getMinutes())}:${pad(tz.getSeconds())}`;
+  return `${tz.getFullYear()}-${pad(tz.getMonth()+1)}-${pad(tz.getDate())} ${pad(tz.getHours())}:${pad(tz.getMinutes())}:${pad(tz.getSeconds())}`;
 }
 
 function today(){
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
   const tz = new Date(d.toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
-  return `${pad(tz.getDate())}/${pad(tz.getMonth()+1)}/${tz.getFullYear()}`;
+  return `${tz.getFullYear()}-${pad(tz.getMonth()+1)}-${pad(tz.getDate())}`;
+}
+
+// ฟังก์ชันกลางสำหรับ parse timestamp รองรับทั้ง format เก่าและใหม่
+function parseTimestamp(str){
+  if(!str) return 0;
+  // YYYY-MM-DD HH:mm:ss (format ใหม่)
+  const m1 = String(str).match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):?(\d{0,2})/);
+  if(m1) return new Date(m1[1], m1[2]-1, m1[3], m1[4], m1[5], m1[6]||0).getTime();
+  // DD/MM/YYYY HH:mm:ss (format เก่า — รองรับทั้ง ค.ศ. และ พ.ศ.)
+  const m2 = String(str).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):?(\d{0,2})/);
+  if(m2){
+    let y = parseInt(m2[3]);
+    if(y > 2400) y -= 543; // แปลง พ.ศ. → ค.ศ.
+    return new Date(y, m2[2]-1, m2[1], m2[4], m2[5], m2[6]||0).getTime();
+  }
+  return new Date(str).getTime()||0;
 }
 
 function formatDateTime(val){
   if(!val) return '-';
-  // รองรับ format dd/MM/yyyy HH:mm:ss ที่มาจาก Sheets โดยตรง
-  const m = String(val).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):?(\d{0,2})/);
-  if(m) {
-    const pad = n => String(n).padStart(2,'0');
-    return `${pad(m[1])}/${pad(m[2])}/${m[3]} ${pad(m[4])}:${pad(m[5])}:${pad(m[6]||'00')}`;
+  const pad = n => String(n).padStart(2,'0');
+  // YYYY-MM-DD HH:mm:ss (format ใหม่)
+  const m1 = String(val).match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):?(\d{0,2})/);
+  if(m1) return `${m1[3]}/${m1[2]}/${m1[1]} ${m1[4]}:${m1[5]}:${pad(m1[6]||'00')}`;
+  // DD/MM/YYYY HH:mm:ss (format เก่า — แปลง พ.ศ. → ค.ศ. ถ้าจำเป็น)
+  const m2 = String(val).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):?(\d{0,2})/);
+  if(m2){
+    let y = parseInt(m2[3]);
+    if(y > 2400) y -= 543;
+    return `${pad(m2[1])}/${pad(m2[2])}/${y} ${pad(m2[4])}:${pad(m2[5])}:${pad(m2[6]||'00')}`;
   }
-  // fallback สำหรับ ISO format
+  // fallback ISO
   const d = new Date(val);
   if(isNaN(d.getTime())) return val;
-  const pad = n => String(n).padStart(2,'0');
   const tz = new Date(d.toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
   return `${pad(tz.getDate())}/${pad(tz.getMonth()+1)}/${tz.getFullYear()} ${pad(tz.getHours())}:${pad(tz.getMinutes())}:${pad(tz.getSeconds())}`;
 }
@@ -1349,27 +1369,44 @@ function renderInventory(){
 
 // ==================== HISTORY ====================
 function renderHistory(){
-  const search=(document.getElementById('hist-search')||{}).value||'';const type=(document.getElementById('hist-type')||{}).value||'';const date=(document.getElementById('hist-date')||{}).value||'';
-  const tb=document.getElementById('hist-table');if(!tb)return;let rows = [...movements].sort((a, b) => {
-  const parseDate = (str) => {
-    if (!str) return 0;
-    const m = str.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):?(\d*)/);
-    if (m) return new Date(m[3], m[2]-1, m[1], m[4], m[5], m[6]||0).getTime();
-    return new Date(str).getTime();
-  };
-  return parseDate(a.timestamp) - parseDate(b.timestamp);
-});
-  if(type)rows=rows.filter(r=>r.type===type);if(search)rows=rows.filter(r=>r.pid.toLowerCase().includes(search.toLowerCase())||(r.product_name||'').includes(search)||(getProduct(r.pid)||{name:''}).name.includes(search));if(date)rows=rows.filter(r=>r.timestamp.includes(date));
+  const search=(document.getElementById('hist-search')||{}).value||'';
+  const type=(document.getElementById('hist-type')||{}).value||'';
+  const date=(document.getElementById('hist-date')||{}).value||''; // YYYY-MM-DD
+  const tb=document.getElementById('hist-table');if(!tb)return;
+
+  let rows = [...movements].sort((a,b) => parseTimestamp(a.timestamp) - parseTimestamp(b.timestamp));
+
+  if(type) rows=rows.filter(r=>r.type===type);
+  if(search) rows=rows.filter(r=>r.pid.toLowerCase().includes(search.toLowerCase())||(r.product_name||'').includes(search)||(getProduct(r.pid)||{name:''}).name.includes(search));
+  if(date){
+    // รองรับทั้ง YYYY-MM-DD (ใหม่) และ DD/MM/YYYY (เก่า)
+    rows=rows.filter(r=>{
+      if(!r.timestamp) return false;
+      // format ใหม่: timestamp ขึ้นต้นด้วย YYYY-MM-DD
+      if(r.timestamp.startsWith(date)) return true;
+      // format เก่า: แปลง date filter เป็น DD/MM/YYYY แล้วเทียบ
+      const [y,m,d2]=date.split('-');
+      return r.timestamp.startsWith(`${d2}/${m}/${y}`);
+    });
+  }
+
   const badge={IN:'<span class="badge in">รับเข้า</span>',OUT:'<span class="badge outb">เบิกออก</span>'};
-  tb.innerHTML=rows.map(r=>{const p=getProduct(r.pid);const cls=r.void?'void-row':r.type==='IN'?'in-row':'out-row';const b=r.void?'<span class="badge void">VOID</span>':r.isVoid?'<span class="badge void">VOID REF</span>':r.isCorrection?'<span class="badge low">แก้ไข</span>':badge[r.type];return`<tr class="${cls}"><td>${formatDateTime(r.timestamp?.replace(/\/(\d{4})/, (m,y) => parseInt(y)>2400 ? '/'+(parseInt(y)-543) : m))}</td><td>${r.id||'-'}</td><td>${b}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td style="text-align:right;font-weight:600">${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td><td>${r.user||'-'}</td></tr>`;}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">ไม่พบข้อมูล</td></tr>';
+  tb.innerHTML=rows.map(r=>{
+    const p=getProduct(r.pid);
+    const cls=r.void?'void-row':r.type==='IN'?'in-row':'out-row';
+    const b=r.void?'<span class="badge void">VOID</span>':r.isVoid?'<span class="badge void">VOID REF</span>':r.isCorrection?'<span class="badge low">แก้ไข</span>':badge[r.type];
+    return`<tr class="${cls}"><td>${formatDateTime(r.timestamp)}</td><td>${r.id||'-'}</td><td>${b}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td style="text-align:right;font-weight:600">${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td><td>${r.user||'-'}</td></tr>`;
+  }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">ไม่พบข้อมูล</td></tr>';
 }
 
 // ==================== DASHBOARD ====================
 function renderDashboard(){
   const PRODUCTS=getAllProducts();document.getElementById('st-total').textContent=PRODUCTS.length;
-  const todayStr=today();const todayISO=new Date().toISOString().slice(0,10);
-  const inToday=inbounds.filter(r=>(r.timestamp.includes(todayStr)||r.timestamp.includes(todayISO))&&!r.void).reduce((s,r)=>s+r.qty,0);
-  const outToday=outbounds.filter(r=>(r.timestamp.includes(todayStr)||r.timestamp.includes(todayISO))&&!r.void).reduce((s,r)=>s+r.qty,0);
+  const todayStr=today(); // ได้ YYYY-MM-DD
+const todayStart=new Date(todayStr+'T00:00:00').getTime();
+const todayEnd=new Date(todayStr+'T23:59:59').getTime();
+const inToday=inbounds.filter(r=>!r.void&&parseTimestamp(r.timestamp)>=todayStart&&parseTimestamp(r.timestamp)<=todayEnd).reduce((s,r)=>s+r.qty,0);
+const outToday=outbounds.filter(r=>!r.void&&parseTimestamp(r.timestamp)>=todayStart&&parseTimestamp(r.timestamp)<=todayEnd).reduce((s,r)=>s+r.qty,0);
   const thresh=getLowThreshold();const lowCount=PRODUCTS.filter(p=>getStock(p.id)<thresh).length;
   document.getElementById('st-in').textContent=inToday;document.getElementById('st-out').textContent=outToday;document.getElementById('st-low').textContent=lowCount;
   const lowProds=PRODUCTS.filter(p=>getStock(p.id)<=thresh);
@@ -1394,16 +1431,16 @@ function switchReport(tab){document.querySelectorAll('.report-tab').forEach(b=>b
 function getStockData(statusFilter,search){const thresh=getLowThreshold();const PRODUCTS=getAllProducts();return PRODUCTS.filter(p=>{if(search&&!p.id.toLowerCase().includes(search.toLowerCase())&&!p.name.toLowerCase().includes(search.toLowerCase()))return false;const stk=getStock(p.id);let s='ok';if(stk<=0)s='out';else if(stk<thresh)s='low';if(statusFilter&&statusFilter!==s)return false;return true;}).map(p=>{const stk=getStock(p.id);const tin=inbounds.filter(r=>r.pid===p.id&&!r.void).reduce((s,r)=>s+r.qty,0);const tout=outbounds.filter(r=>r.pid===p.id&&!r.void).reduce((s,r)=>s+r.qty,0);let status='ok';if(stk<=0)status='out';else if(stk<thresh)status='low';return{...p,stk,tin,tout,status,value:stk*p.price};});}
 function renderReportStock(){const sf=(document.getElementById('rpt-stock-status')||{}).value||'';const ss=(document.getElementById('rpt-stock-search')||{}).value||'';const data=getStockData(sf,ss);const totalValue=data.reduce((s,d)=>s+d.value,0);const outCount=data.filter(d=>d.stk<=0).length;const lowCount=data.filter(d=>d.status==='low').length;document.getElementById('rpt-stock-summary').innerHTML=`<div class="stat blue"><div class="val">${data.length}</div><div class="lbl">รายการสินค้า</div></div><div class="stat green"><div class="val">฿${fmt(totalValue)}</div><div class="lbl">มูลค่าคลังรวม</div></div><div class="stat orange"><div class="val">${lowCount}</div><div class="lbl">ใกล้หมด</div></div><div class="stat red"><div class="val">${outCount}</div><div class="lbl">หมดสต๊อก</div></div>`;const badge={ok:'<span class="badge ok">ปกติ</span>',low:'<span class="badge low">ใกล้หมด</span>',out:'<span class="badge out">หมดสต๊อก</span>'};document.getElementById('rpt-stock-table').innerHTML=data.map(d=>`<tr><td><b>${d.id}</b></td><td>${d.name}</td><td>${d.unit}</td><td style="text-align:right">${fmt(d.tin)}</td><td style="text-align:right">${fmt(d.tout)}</td><td style="text-align:right;font-weight:700;color:${d.stk<=0?'var(--danger)':d.status==='low'?'var(--warning)':'var(--text)'}">${fmt(d.stk)}</td><td style="text-align:right">฿${fmt(d.price)}</td><td style="text-align:right">฿${fmt(d.value)}</td><td>${badge[d.status]}</td></tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px">ไม่พบข้อมูล</td></tr>';}
 function renderReportMovement(){const tf=(document.getElementById('rpt-mv-type')||{}).value||'';let rows=[...movements].reverse();if(tf)rows=rows.filter(r=>r.type===tf);const badge={IN:'<span class="badge in">รับเข้า</span>',OUT:'<span class="badge outb">เบิกออก</span>'};document.getElementById('rpt-mv-table').innerHTML=rows.map(r=>{const p=getProduct(r.pid);const cls=r.void?'void-row':r.type==='IN'?'in-row':'out-row';return`<tr class="${cls}"><td>${formatDateTime(r.timestamp)}</td><td>${r.docId||'-'}</td><td>${r.void?'<span class="badge void">VOID</span>':badge[r.type]}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td style="text-align:right;font-weight:600">${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td><td>${r.user||'-'}</td></tr>`;}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px">ไม่พบข้อมูล</td></tr>';}
-function renderReportTurnover(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const cutoff=days>0?new Date(Date.now()-days*86400000):null;const outFiltered=days>0?outbounds.filter(r=>{if(r.void)return false;const d=new Date(r.timestamp.replace(/(\d+)\/(\d+)\/(\d+)/,'$3-$2-$1'));return!cutoff||d>=cutoff;}):outbounds.filter(r=>!r.void);const totals=PRODUCTS.map(p=>({...p,qty:outFiltered.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);const fast=totals.slice(0,10);const slow=[...totals].sort((a,b)=>a.qty-b.qty).slice(0,10);function makeChart(items,color){if(items.every(i=>i.qty===0))return'<div style="color:var(--text-muted);font-size:13px;padding:10px">ยังไม่มีข้อมูล</div>';const mx=Math.max(...items.map(i=>i.qty))||1;return items.map(i=>`<div class="bar-row"><div class="bar-label" title="${i.name}">${i.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(i.qty/mx*100)}%;background:${color}"></div></div><div class="bar-val">${fmt(i.qty)}</div></div>`).join('');}document.getElementById('rpt-fast-chart').innerHTML=makeChart(fast,'#155fa0');document.getElementById('rpt-slow-chart').innerHTML=makeChart(slow,'#b45309');}
+function renderReportTurnover(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const cutoff=days>0?new Date(Date.now()-days*86400000):null;const outFiltered=days>0?outbounds.filter(r=>{if(r.void)return false;return !cutoff || parseTimestamp(r.timestamp) >= cutoff.getTime();}):outbounds.filter(r=>!r.void);const totals=PRODUCTS.map(p=>({...p,qty:outFiltered.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);const fast=totals.slice(0,10);const slow=[...totals].sort((a,b)=>a.qty-b.qty).slice(0,10);function makeChart(items,color){if(items.every(i=>i.qty===0))return'<div style="color:var(--text-muted);font-size:13px;padding:10px">ยังไม่มีข้อมูล</div>';const mx=Math.max(...items.map(i=>i.qty))||1;return items.map(i=>`<div class="bar-row"><div class="bar-label" title="${i.name}">${i.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(i.qty/mx*100)}%;background:${color}"></div></div><div class="bar-val">${fmt(i.qty)}</div></div>`).join('');}document.getElementById('rpt-fast-chart').innerHTML=makeChart(fast,'#155fa0');document.getElementById('rpt-slow-chart').innerHTML=makeChart(slow,'#b45309');}
 function tableToCSV(headers,rows){const BOM='\uFEFF';const e=v=>'"'+String(v).replace(/"/g,'""')+'"';return BOM+[headers,...rows].map(r=>r.map(e).join(',')).join('\n');}
 function downloadCSV(csv,fn){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=fn;a.click();}
 function exportStockExcel(){const data=getStockData('','');const sl={ok:'ปกติ',low:'ใกล้หมด',out:'หมดสต๊อก'};downloadCSV(tableToCSV(['รหัสสินค้า','ชื่อสินค้า','หน่วย','รับรวม','เบิกรวม','คงเหลือ','ราคา/หน่วย','มูลค่าคลัง','สถานะ'],data.map(d=>[d.id,d.name,d.unit,d.tin,d.tout,d.stk,d.price,d.value,sl[d.status]])),'stock_'+new Date().toISOString().slice(0,10)+'.csv');toast('ดาวน์โหลด Excel สำเร็จ','ok');}
 function exportMovementExcel(){const tf=(document.getElementById('rpt-mv-type')||{}).value||'';let rows=[...movements].reverse();if(tf)rows=rows.filter(r=>r.type===tf);downloadCSV(tableToCSV(['วันที่/เวลา','เลขที่','ประเภท','รหัสสินค้า','ชื่อสินค้า','จำนวน','หมายเหตุ','ผู้ทำรายการ'],rows.map(r=>{const p=getProduct(r.pid);return[r.timestamp,r.docId||'-',r.type==='IN'?'รับเข้า':'เบิกออก',r.pid,r.product_name||p?.name||'',r.qty,r.note||'-',r.user||'-'];})),'movement_'+new Date().toISOString().slice(0,10)+'.csv');toast('ดาวน์โหลด Excel สำเร็จ','ok');}
-function exportTurnoverExcel(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const of2=days>0?outbounds.filter(r=>{if(r.void)return false;const d=new Date(r.timestamp.replace(/(\d+)\/(\d+)\/(\d+)/,'$3-$2-$1'));return d>=new Date(Date.now()-days*86400000);}):outbounds.filter(r=>!r.void);const data=PRODUCTS.map(p=>({...p,qty:of2.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);downloadCSV(tableToCSV(['รหัสสินค้า','ชื่อสินค้า','หน่วย','จำนวนเบิกรวม'],data.map(d=>[d.id,d.name,d.unit,d.qty])),'turnover_'+new Date().toISOString().slice(0,10)+'.csv');toast('ดาวน์โหลด Excel สำเร็จ','ok');}
+function exportTurnoverExcel(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const of2=days>0?outbounds.filter(r=>{if(r.void)return false;return !cutoff || parseTimestamp(r.timestamp) >= cutoff.getTime();return d>=new Date(Date.now()-days*86400000);}):outbounds.filter(r=>!r.void);const data=PRODUCTS.map(p=>({...p,qty:of2.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);downloadCSV(tableToCSV(['รหัสสินค้า','ชื่อสินค้า','หน่วย','จำนวนเบิกรวม'],data.map(d=>[d.id,d.name,d.unit,d.qty])),'turnover_'+new Date().toISOString().slice(0,10)+'.csv');toast('ดาวน์โหลด Excel สำเร็จ','ok');}
 function exportPDFWindow(title,headerHTML,tableHTML){const w=window.open('','_blank');w.document.write(`<html><head><title>${title}</title><style>body{font-family:'Sarabun',sans-serif;padding:24px;font-size:12px}h2{color:#1a3c5e;border-bottom:2px solid #1a3c5e;padding-bottom:6px;margin-bottom:12px}table{width:100%;border-collapse:collapse}th{background:#f0f3f8;font-weight:700;padding:7px 8px;border:1px solid #dce3ed}td{padding:6px 8px;border:1px solid #dce3ed}.ok{color:#1a7f4b}.low{color:#b45309}.out{color:#b71c1c}</style></head><body><h2>${title}</h2><div style="font-size:11px;color:#6b7d91;margin-bottom:14px">${headerHTML}</div><table>${tableHTML}</table><script>window.onload=function(){window.print()}<\/script></body></html>`);w.document.close();}
 function exportStockPDF(){const data=getStockData('','');const sl={ok:'ปกติ',low:'ใกล้หมด',out:'หมดสต๊อก'};const sc={ok:'ok',low:'low',out:'out'};const tv=data.reduce((s,d)=>s+d.value,0);const thead=`<thead><tr><th>รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>รับรวม</th><th>เบิกรวม</th><th>คงเหลือ</th><th>ราคา/หน่วย</th><th>มูลค่าคลัง</th><th>สถานะ</th></tr></thead>`;const tbody='<tbody>'+data.map(d=>`<tr><td>${d.id}</td><td>${d.name}</td><td>${d.unit}</td><td>${fmt(d.tin)}</td><td>${fmt(d.tout)}</td><td class="${sc[d.status]}">${fmt(d.stk)}</td><td>฿${fmt(d.price)}</td><td>฿${fmt(d.value)}</td><td class="${sc[d.status]}">${sl[d.status]}</td></tr>`).join('')+'</tbody>';exportPDFWindow('รายงานสต๊อกคงเหลือ – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | มูลค่ารวม: ฿${fmt(tv)}`,thead+tbody);}
 function exportMovementPDF(){const tf=(document.getElementById('rpt-mv-type')||{}).value||'';let rows=[...movements].reverse();if(tf)rows=rows.filter(r=>r.type===tf);const thead=`<thead><tr><th>วันที่/เวลา</th><th>เลขที่</th><th>ประเภท</th><th>รหัส</th><th>ชื่อสินค้า</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead>`;const tbody='<tbody>'+rows.map(r=>{const p=getProduct(r.pid);return`<tr><td>${formatDateTime(r.timestamp)}</td><td>${r.docId||'-'}</td><td class="${r.type==='IN'?'ok':'out'}">${r.type==='IN'?'รับเข้า':'เบิกออก'}</td><td>${r.pid}</td><td>${r.product_name||p?.name||''}</td><td>${r.qty>0?(r.type==='IN'?'+':'-')+fmt(r.qty):'—'}</td><td>${r.note||'-'}</td></tr>`;}).join('')+'</tbody>';exportPDFWindow('รายงานการเคลื่อนไหวสินค้า – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | รายการทั้งหมด: ${rows.length} รายการ`,thead+tbody);}
-function exportTurnoverPDF(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const of2=days>0?outbounds.filter(r=>{if(r.void)return false;const d=new Date(r.timestamp.replace(/(\d+)\/(\d+)\/(\d+)/,'$3-$2-$1'));return d>=new Date(Date.now()-days*86400000);}):outbounds.filter(r=>!r.void);const data=PRODUCTS.map(p=>({...p,qty:of2.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);const thead=`<thead><tr><th>อันดับ</th><th>รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>จำนวนเบิก</th></tr></thead>`;const tbody='<tbody>'+data.map((d,i)=>`<tr><td>${i+1}</td><td>${d.id}</td><td>${d.name}</td><td>${d.unit}</td><td>${fmt(d.qty)}</td></tr>`).join('')+'</tbody>';exportPDFWindow('รายงานหมุนเวียนสินค้า – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | ช่วงเวลา: ${days>0?days+' วันล่าสุด':'ทั้งหมด'}`,thead+tbody);}
+function exportTurnoverPDF(){const days=parseInt((document.getElementById('rpt-tv-range')||{}).value)||0;const PRODUCTS=getAllProducts();const of2=days>0?outbounds.filter(r=>{if(r.void)return false;return !cutoff || parseTimestamp(r.timestamp) >= cutoff.getTime();return d>=new Date(Date.now()-days*86400000);}):outbounds.filter(r=>!r.void);const data=PRODUCTS.map(p=>({...p,qty:of2.filter(r=>r.pid===p.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);const thead=`<thead><tr><th>อันดับ</th><th>รหัส</th><th>ชื่อสินค้า</th><th>หน่วย</th><th>จำนวนเบิก</th></tr></thead>`;const tbody='<tbody>'+data.map((d,i)=>`<tr><td>${i+1}</td><td>${d.id}</td><td>${d.name}</td><td>${d.unit}</td><td>${fmt(d.qty)}</td></tr>`).join('')+'</tbody>';exportPDFWindow('รายงานหมุนเวียนสินค้า – ธูปหอมพรหมประสิทธิ์',`พิมพ์เมื่อ: ${now()} | ช่วงเวลา: ${days>0?days+' วันล่าสุด':'ทั้งหมด'}`,thead+tbody);}
 
 // ==================== ALERT CENTER ====================
 let currentAlertFilter='all';
