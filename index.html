@@ -799,7 +799,7 @@ async function apiPost(action,data={}){const res=await fetch(API_URL,{method:'PO
 let products=[];
 let inbounds=[];
 let outbounds=[];
-let movements=[];
+let =[];
 let outDocs=[];
 let soDocs=[];          // เปลี่ยนจาก poDocs → soDocs
 let productImages={};
@@ -822,13 +822,15 @@ async function loadAllData(){
     products=(prods.data||[]).filter(p=>p.id);
     inbounds=(ibs.data||[]);
     outbounds=(obs.data||[]);
-    movements=(movs.data||[]);
+    movements = (movs.data || []).filter(r => r && r.pid && r.type);
     outDocs=(ods.data||[]);
     soDocs=(sos.data||[]);    // เปลี่ยนจาก poDocs → soDocs
 
     inbounds=inbounds.map(r=>({...r,qty:Number(r.qty)||0,void:r.void==='TRUE'||r.void===true}));
     outbounds=outbounds.map(r=>({...r,qty:Number(r.qty)||0,void:r.void==='TRUE'||r.void===true}));
-    movements=movements.map(r=>({...r,qty:Number(r.qty)||0,void:r.void==='TRUE'||r.void===true,isVoid:r.isVoid==='TRUE'||r.isVoid===true,isCorrection:r.isCorrection==='TRUE'||r.isCorrection===true}));
+    movements = movements
+  .filter(r => r && r.pid && r.type)
+  .map(r => ({...r, qty: Number(r.qty)||0, void: r.void==='TRUE'||r.void===true, isVoid: r.isVoid==='TRUE'||r.isVoid===true, isCorrection: r.isCorrection==='TRUE'||r.isCorrection===true}));
     outDocs=outDocs.map(d=>({...d,total:Number(d.total)||0,void:d.void==='TRUE'||d.void===true,items:safeParseJSON(d.items_json,[]),
       soRef:d.so_ref||d.soRef||''}));   // เปลี่ยน po_ref → so_ref, poRef → soRef
     soDocs=soDocs.map(d=>({...d,total:Number(d.total)||0,void:d.void==='TRUE'||d.void===true,
