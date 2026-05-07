@@ -898,21 +898,24 @@ function parseTimestamp(str){
 function formatDateTime(val){
   if(!val) return '-';
   const pad = n => String(n).padStart(2,'0');
-  // YYYY-MM-DD HH:mm:ss (format ใหม่)
+
+  // format ใหม่: YYYY-MM-DD HH:mm:ss → แสดงผลตรงๆ เลย
   const m1 = String(val).match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):?(\d{0,2})/);
-  if(m1) return `${m1[3]}/${m1[2]}/${m1[1]} ${m1[4]}:${m1[5]}:${pad(m1[6]||'00')}`;
-  // DD/MM/YYYY HH:mm:ss (format เก่า — แปลง พ.ศ. → ค.ศ. ถ้าจำเป็น)
+  if(m1) return `${m1[1]}-${m1[2]}-${m1[3]} ${m1[4]}:${m1[5]}:${pad(m1[6]||'00')}`;
+
+  // format เก่า: DD/MM/YYYY HH:mm:ss → แปลงให้เป็น YYYY-MM-DD
   const m2 = String(val).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):?(\d{0,2})/);
   if(m2){
     let y = parseInt(m2[3]);
-    if(y > 2400) y -= 543;
-    return `${pad(m2[1])}/${pad(m2[2])}/${y} ${pad(m2[4])}:${pad(m2[5])}:${pad(m2[6]||'00')}`;
+    if(y > 2400) y -= 543; // แปลง พ.ศ. → ค.ศ.
+    return `${y}-${pad(m2[2])}-${pad(m2[1])} ${pad(m2[4])}:${pad(m2[5])}:${pad(m2[6]||'00')}`;
   }
-  // fallback ISO
+
+  // fallback: ISO หรือรูปแบบอื่นๆ
   const d = new Date(val);
   if(isNaN(d.getTime())) return val;
   const tz = new Date(d.toLocaleString('en-US', {timeZone:'Asia/Bangkok'}));
-  return `${pad(tz.getDate())}/${pad(tz.getMonth()+1)}/${tz.getFullYear()} ${pad(tz.getHours())}:${pad(tz.getMinutes())}:${pad(tz.getSeconds())}`;
+  return `${tz.getFullYear()}-${pad(tz.getMonth()+1)}-${pad(tz.getDate())} ${pad(tz.getHours())}:${pad(tz.getMinutes())}:${pad(tz.getSeconds())}`;
 }
 function autoId(prefix,list){return prefix+(list.length+1).toString().padStart(4,'0');}
 function getLowThreshold(){return parseInt((document.getElementById('low-threshold')||{value:10}).value)||10;}
